@@ -1,0 +1,11 @@
+- gia compile : gcc kMeans.c -lm
+
+- gia ta plots xrisimopoihthike o idios kwdikas tou arxeiou plots.py apla allaksan kapoioi parametroi gia na diavastoun ta swsta arxeia.
+
+- Gia to pws metavalletai to sfalma omadopoihshs exoume ftiaksei to programma Error.py kai exoun  topothetithei oi times me to xeri.
+
+- oles oi times sta diagrammata uparxoun sta arxeia me ta antistoixa arxeia 
+
+- sto procesed_data uparxoun ta stoixeia toy dataset se mporfh eukolotera diaxeirisimh. Auto egine me thn parakatw entolh se bash
+awk -F'[( , )]+' '{print $5, $6}' dataset2.txt > processed_data.txt
+
