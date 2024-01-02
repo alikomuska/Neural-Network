@@ -13,7 +13,7 @@ def read_data(file_name):
     return data
 
 # Read data
-centers_data = read_data('centers12.txt')
+centers_data = read_data('centers9.txt')
 processed_data = read_data('processed_data.txt')
 
 # Extract x, y values for each dataset
@@ -30,11 +30,11 @@ plt.scatter(centers_x, centers_y, marker='*', s=150, label='_nolegend_')
 plt.scatter(processed_x, processed_y, marker='+', s=50, label='Processed Data')
 
 # Customize plot
-plt.title('Centers 12')
+plt.title('Centers 9')
 plt.xlabel('X-axis')
 plt.ylabel('Y-axis')
 plt.legend()
 
 # Save or show the plot
-plt.savefig('Centers12.png')  # Save the plot as an image
+plt.savefig('Centers9.png')  # Save the plot as an image
 plt.show()  # Show the plot

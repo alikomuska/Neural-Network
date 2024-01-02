@@ -17,7 +17,7 @@ int main(){
 
  	create_values(0.8,1.2,0.8,1.2,150,file);						//1)
  	create_values(0,0.5,0,0.5,150,file);							//2)
- 	create_values(1.5,2,1.5,2,150,file);							//3)
+ 	create_values(1.5,2,0,0.5,150,file);							//3)
  	create_values(0,0.5,1.5,2,150,file);							//4)
  	create_values(1.5,2,1.5,2,150,file);							//5)
  	create_values(0,0.4,0.8,1.2,75,file);							//6)
@@ -45,7 +45,7 @@ int main(){
  			x = min_x + (rand()/div_x);
  			y = min_y + (rand()/div_y);
 
- 			fprintf(fp,"(x1,x2) = (%f,%f)\n",x,y);
+ 			fprintf(fp,"(x1,x2)=(%f,%f)\n",x,y);
  		}
  	}
 

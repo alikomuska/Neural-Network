@@ -7,9 +7,8 @@ int main(){
   double **teams;
   int seasons = 1;
  
-
   srand((unsigned int)time(NULL));
-  
+
   fp = fopen("dataset2.txt", "r");
   if(fp == NULL){
     perror("Error opening the file");
@@ -24,9 +23,10 @@ int main(){
   if(centers == NULL)
     return -1;
   
-  teams = allocate_num0f_teams();
+  teams = allocate_numOf_teams();
   if(teams == NULL)
       return -1;
+
 
   while(1){
     double error = 0;
@@ -122,7 +122,7 @@ center_t *centers_init(double **values){
   }
   
   for(i=0; i<M;i++){
-    centers[i] = create_random_values(0,1,0,1199);
+    centers[i].y = create_random_values(0,1199);
     
     centers[i].x = (values[0][(int)(centers[i].y)]);
     centers[i].y = (values[1][(int)(centers[i].y)]);
@@ -135,25 +135,17 @@ center_t *centers_init(double **values){
   return centers;
 }
 
-center_t create_random_values(int min_x, int max_x, int min_y, int max_y){
-  center_t values;
-  int x,y,range_x, range_y,div_x, div_y;
-  int i;
-    
-  range_x = (max_x - min_x);
+int create_random_values(int min_y, int max_y){
+  int value, y, range_y;
+
   range_y = (max_y - min_y);
-
-  div_x = RAND_MAX /range_x;
-  div_y = RAND_MAX /range_y;
-
       
-  values.x = (double)(min_x + rand()%(range_x+1));
-  values.y = (double)(min_y + rand()%(range_y+1));
+  value = (double)(min_y + rand()%(range_y+1));
 
-  return values;
+  return value;
 }
 
-double** allocate_num0f_teams(){
+double** allocate_numOf_teams(){
   double **oj;
   int i;
 

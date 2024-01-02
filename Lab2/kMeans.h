@@ -4,7 +4,7 @@
 #include <math.h>
 #include <time.h>
 
-#define M 12
+#define M 9
 #define N 1200
 
 struct center_s{
@@ -20,8 +20,8 @@ typedef struct center_s center_t;
 
 double** load_data(FILE *fp);
 center_t *centers_init();
-center_t create_random_values(int min_x, int max_x, int min_y, int max_y);
-double** allocate_num0f_teams();
+int create_random_values(int min_y, int max_y);
+double** allocate_numOf_teams();
 double* resize_teams(double *teams, center_t center);
 double calculate_distance(double x, double y, double cen_x, double cen_y);
 void find_min(double *values, double *array);
