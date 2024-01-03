@@ -5,8 +5,9 @@
 
 #define D 2 // number of inputs
 #define K 4 // number of outputs
-#define H1 6 // hidden layer 1
-#define H2 3 // ... 2
+#define MAX_LINES 4000 
+#define H1 8 // hidden layer 1
+#define H2 8 // ... 2
 #define H3 4 // ... 3
 #define NUM_LAYERS 3
 #define FUNC 0 // 0 for logistic 1 for hyberbolic 2 for relu
@@ -53,9 +54,14 @@ float linear(float x) {
 struct Neuron {
     float bias;
     float *Weights;
+    float *error_derivative;
+    float weighted_sum;
     float output;
     int layer;
     int num_input;
+    float error;
+    float derivative;
+    float bias_derivative;
 
 };
 
@@ -68,25 +74,63 @@ struct Layer {
 struct Neural_Network {
     int num_layers;
     struct Layer *layers;
+    float total_error;
 };
+
+void loadDataset(const char *filename, float x[][D], int *numExamples) {
+    FILE *file;
+    file = fopen(filename, "r");
+
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        *numExamples = 0;
+        return;
+    }
+
+    int line_count = 0;
+
+    while (fscanf(file, "%f %f", &x[line_count][0], &x[line_count][1]) == 2) {
+        // Successfully read two values from the line
+        line_count++;
+
+        if (line_count >= MAX_LINES) {
+            printf("Exceeded maximum number of lines. Increase MAX_LINES.\n");
+            break;
+        }
+    }
+
+    fclose(file);
+
+    *numExamples = line_count;
+}
+
+
+
 
 void init_neurons(struct Neuron* neuron, int layer){
     neuron->bias = generateRandomfloat();
     neuron->layer = layer;
+    neuron->bias_derivative = 0;
 
     //printf("MY LAYER IS %d\n", layer);
     
 
     if(layer == 1){
         neuron->num_input = D;
-        neuron->Weights = malloc(sizeof(float) * neuron->num_input);
+        //neuron->Weights = malloc(sizeof(float) * neuron->num_input);
+        //neuron->error_derivative = malloc(sizeof(float) * neuron->num_input);
     }else{
         neuron->num_input = neurons_per_layer[layer-2];
-        neuron->Weights = malloc(sizeof(float) * neuron->num_input);
+        //neuron->Weights = malloc(sizeof(float) * neuron->num_input);
+        //neuron->error_derivative = malloc(sizeof(float) * neuron->num_input);
     }
+
+    neuron->Weights = malloc(sizeof(float) * neuron->num_input);
+    neuron->error_derivative = malloc(sizeof(float) * neuron->num_input);
 
     for(int i = 0; i < neuron->num_input; i++){
         neuron->Weights[i] = generateRandomfloat();
+        neuron->error_derivative[i] = 0;
     }
     
 }
@@ -126,16 +170,62 @@ void print_network(struct Neural_Network* network) {
             printf("\nNeuron %d:\n", j + 1);
             printf("Bias: %lf\n", network->layers[i].neurons[j].bias);
             printf("Number of input neurons: %d\n", network->layers[i].neurons[j].num_input);
-
+            printf("Error: %lf\n", network->layers[i].neurons[j].error);
             printf("Weights:\n");
             for (int k = 0; k < network->layers[i].neurons[j].num_input; k++) {
                 printf("  Weight %d: %lf\n", k + 1, network->layers[i].neurons[j].Weights[k]);
             }
-
+            printf("--------------------------------------------\n");
+            for (int k = 0; k < network->layers[i].neurons[j].num_input; k++) {
+                printf(" Error Weight %d: %lf\n", k + 1, network->layers[i].neurons[j].error_derivative[k]);
+            }
+            printf("Derivative of bias: %lf\n", network->layers[i].neurons[j].bias_derivative);
+          
             printf("print the output %lf \n", network->layers[i].neurons[j].output);
         }
     }
+
+    printf("--------------------------------------------\n");
+    printf("total error: %lf", network->total_error);
     printf("\n");
+}
+
+void classification(float *x, float *t) {
+    t[0] = t[1] = t[2] = t[3] = 0;  // Initialize array elements
+    int flag = 0;
+
+    if((pow((x[0] - 0.5) , 2) + pow((x[1] - 0.5) , 2)) < 0.2 && x[0] > 0.5){
+        t[0] = 1;
+        flag = 1;
+    } else if((pow((x[0] - 0.5) , 2) + pow((x[1] - 0.5) , 2)) < 0.2 && x[0] < 0.5) {
+        t[1] = 1;
+        flag = 1;
+    } else if((pow((x[0] + 0.5) , 2) + pow((x[1] + 0.5) , 2)) < 0.2 && x[0] > -0.5) {
+        t[0] = 1;
+        flag = 1;
+    } else if((pow((x[0] + 0.5) , 2) + pow((x[1] + 0.5) , 2)) < 0.2 && x[0] < -0.5) {
+        t[1] = 1;
+        flag = 1;
+    } else if((pow((x[0] - 0.5) , 2) + pow((x[1] + 0.5) , 2)) < 0.2 && x[0] > 0.5) {
+        t[0] = 1;
+        flag = 1;
+    } else if((pow((x[0] - 0.5) , 2) + pow((x[1] + 0.5) , 2)) < 0.2 && x[0] < 0.5) {
+        t[1] = 1;
+        flag = 1;
+    } else if((pow((x[0] + 0.5) , 2) + pow((x[1] - 0.5) , 2)) < 0.2 && x[0] > -0.5) {
+        t[0] = 1;
+        flag = 1;
+    } else if((pow((x[0] + 0.5) , 2) + pow((x[1] - 0.5) , 2)) < 0.2 && x[0] < -0.5) {
+        t[1] = 1;
+        flag = 1;
+    }
+
+    if (flag == 0 && x[0] > 0) {
+        t[2] = 1;
+        flag = 1;
+    }else if(flag == 0 && x[0] < 0) {
+        t[3] = 1;
+    }
 }
 
 
@@ -173,25 +263,27 @@ void forward_pass(struct Neural_Network* network, float *x, int d, float *y, int
         
         for (int j = 0; j < network->layers[i].num_neurons; j++) {
             float weighted_sum = 0;
+            // Reset the weighted sum for each neuron
+            network->layers[i].neurons[j].weighted_sum = 0.0;
             for (int k = 0; k < network->layers[i].neurons[j].num_input; k++) {
-                weighted_sum += input_vector[k] * network->layers[i].neurons[j].Weights[k]; 
+                network->layers[i].neurons[j].weighted_sum += input_vector[k] * network->layers[i].neurons[j].Weights[k]; 
             }
-            weighted_sum += network->layers[i].neurons[j].bias;
+            network->layers[i].neurons[j].weighted_sum += network->layers[i].neurons[j].bias;
 
             if(i == NUM_LAYERS) {
                 // linear for output layer
-                network->layers[i].neurons[j].output = linear(weighted_sum);
+                network->layers[i].neurons[j].output = sigmoid(network->layers[i].neurons[j].weighted_sum);
             }else {
                 // hidden layers activation functions
                 if (FUNC == 0) {
                     // Logistic (Sigmoid) Activation Function
-                    network->layers[i].neurons[j].output = sigmoid(weighted_sum);
+                    network->layers[i].neurons[j].output = sigmoid(network->layers[i].neurons[j].weighted_sum);
                 } else if(FUNC == 1) {
                     // hyperbolic Activation Function
-                    network->layers[i].neurons[j].output = hyperbolic(weighted_sum);
+                    network->layers[i].neurons[j].output = hyperbolic(network->layers[i].neurons[j].weighted_sum);
                 } else {
                     // relu
-                    network->layers[i].neurons[j].output = relu(weighted_sum);
+                    network->layers[i].neurons[j].output = relu(network->layers[i].neurons[j].weighted_sum);
                 }
             }
             // Copy the values of each neuron to the output vector 
@@ -209,19 +301,126 @@ void forward_pass(struct Neural_Network* network, float *x, int d, float *y, int
     free(output_vector);
 }
 
+void backprop(struct Neural_Network *network, float *x, int d, float *t, int k) {
+
+    float *output = malloc(sizeof(float) * K);
+
+    forward_pass(network, x , d, output, K);
+
+    // compute error
+    float error = 0;
+    for(int i = 0; i < K; i++){
+        error += pow(t[i] - output[i] , 2);
+    }
+
+    network->total_error = error;
+
+    //compute errors in each neuron backwards
+
+    for(int i = NUM_LAYERS; i >= 0; i--){
+        for(int j = 0; j < network->layers[i].num_neurons; j++){
+            if(i == NUM_LAYERS) {
+                network->layers[i].neurons[j].error = network->layers[i].neurons[j].output * (1 - network->layers[i].neurons[j].output) *
+                ( network->layers[i].neurons[j].output- t[j]);
+            }else {
+                float error_accumulator = 0.0;
+                for(int k = 0; k < network->layers[i + 1].num_neurons; k++){
+                         error_accumulator += network->layers[i + 1].neurons[k].Weights[j] *
+                                     network->layers[i + 1].neurons[k].error;
+                }
+                network->layers[i].neurons[j].error = network->layers[i].neurons[j].output *
+                                                   (1 - network->layers[i].neurons[j].output) *
+                                                   error_accumulator;
+            }
+
+            if(i == 0){
+                // compute error derivatives
+                for(int l = 0; l < network->layers[i].neurons[j].num_input; l++){
+                    network->layers[i].neurons[j].error_derivative[l] = network->layers[i].neurons[j].error * x[l];
+                }
+            }else{
+                for(int l = 0; l < network->layers[i].neurons[j].num_input; l++){
+                    network->layers[i].neurons[j].error_derivative[l] = network->layers[i].neurons[j].error * network->layers[i - 1].neurons[l].output;
+                }
+            }
+            network->layers[i].neurons[j].bias_derivative = network->layers[i].neurons[j].error;
+
+        }
+    }
+
+}
+
+
+
 
 int main(int argc, char* argv[]) {
     srand(time(NULL));
 
+    // Load dataset
+    float x[MAX_LINES][D];
+    int numExamples;
+    loadDataset("dataset.txt", x, &numExamples);
+
+    // Initialize neural network
     struct Neural_Network network;
     init_neural_network(&network, NUM_LAYERS);
 
+    // Training parameters
+    int epochs = 1000;
+    float learning_rate = 0.001;
+
+    // Training loop
+    for (int epoch = 0; epoch < epochs; epoch++) {
+        for (int example = 0; example < 4000; example++) {
+            // Input and target for the selected example
+            float input[D];
+            float target[K];
+            for (int i = 0; i < D; i++) {
+                input[i] = x[example][i];
+            }
+            classification(input, target);
+
+            // Perform forward pass and backpropagation
+            //forward_pass(&network, input, D, target, K);
+            backprop(&network, input, D, target, K);
+
+            // Update weights and biases using online gradient descent
+            for (int i = 0; i < network.num_layers; i++) {
+                for (int j = 0; j < network.layers[i].num_neurons; j++) {
+                    for (int k = 0; k < network.layers[i].neurons[j].num_input; k++) {
+                        network.layers[i].neurons[j].Weights[k] -= learning_rate * network.layers[i].neurons[j].error_derivative[k];
+                    }
+                    network.layers[i].neurons[j].bias -= learning_rate * network.layers[i].neurons[j].bias_derivative;
+                }
+            }
+        }
+
+        // Print the total error for every 100 epochs
+        if (epoch % 1 == 0) {
+            printf("Epoch %d - Total Error: %lf\n", epoch, network.total_error);
+        }
+    }
+
     // Allocate memory for input and output vectors
-    float input[D] = {0.5, -0.7};  // Example input values in the range [-1, 1]
+    float input[D] = {0.8, -0.2};  // Example input values in the range [-1, 1]
     float *output = malloc(sizeof(float) * K);
 
+    
+
+    // Print the final network
+    printf("Final Network:\n");
+    //print_network(&network);
+
+    
     // Perform the forward pass
     forward_pass(&network, input, D, output, K);
+    float target[K];
+    classification(input, target);
+
+    for(int i = 0 ; i < K; i++){
+        printf("%lf ", target[i]);
+    }
+    printf("\n");
 
     
     // Print the output vector
@@ -234,8 +433,8 @@ int main(int argc, char* argv[]) {
     // Free allocated memory
     free(output);
 
-    print_network(&network);
+    //print_network(&network); 
 
     return 0;
-} 
+}
 

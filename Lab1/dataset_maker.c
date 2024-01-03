@@ -1,49 +1,34 @@
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <time.h>
 
-#define N 8000
+int main() {
+    // Seed the random number generator with the current time
+    srand(time(NULL));
 
-int main(){
+    // Define the file pointer and open the file in write mode
+    FILE *file = fopen("dataset.txt", "w");
 
- double x, y;
-
- srand(time(NULL));
- FILE *file = fopen("dataset.txt", "w");
-
- if(file == NULL){
-  printf("Something went wrong with the file");
-  return -1;
- }
-
- for(int i = 0; i<N; i++){
-  x = 2*(double)rand()/ (double)RAND_MAX -1;
-  y = 2*(double)rand()/ (double)RAND_MAX -1;
- 
-  if(x<0){   // case 3,4,7,8,9
-    if(pow(x + 0.5, 2) + pow(y - 0.5, 2) < 0.2 ||  (pow(x + 0.5, 2) + pow(y + 0.5, 2) < 0.2)){  // case 3,4,7,8
-      if(x<-0.5){  //left inside the cycle left(green) C1 case 4,8
-        fprintf(file, "%f %f 2\n", x , y);
-      }else{        //left inside the cycle right (pink) C2 case 3,7
-        fprintf(file, "%f %f 1\n", x, y);
-      }
-    }else{
-      fprintf(file, "%f %f 4\n", x, y); // left outside of the cycles (blue) C4 case 10
-    }
-  }else{ //case 1,2,5,6,10
-    if(pow(x - 0.5, 2) + pow(y - 0.5, 2) < 0.2 || pow(x - 0.5, 2) + pow(y + 0.5, 2) < 0.2){
-      if(x>0.5){  //right inside the cycle right (pink) case 1,5
-        fprintf(file, "%f %f 1\n", x, y);
-      }else{
-        fprintf(file, "%f %f 2\n", x, y); //right inside the cycle left (green) case 2, 6 
-      }
-    }else{ // right outside of the cycle (red) C3 case 9
-      fprintf(file, "%f %f 3\n", x, y);
+    // Check if the file was opened successfully
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return 1;
     }
 
-  } //end else
- } //end for
+    // Generate 8000 examples
+    for (int i = 0; i < 8000; ++i) {
+        // Generate random float values between -1 and 1
+        float x1 = ((float)rand() / RAND_MAX) * 2 - 1;
+        float x2 = ((float)rand() / RAND_MAX) * 2 - 1;
 
+        // Write the values to the file
+        fprintf(file, "%f %f\n", x1, x2);
+    }
 
+    // Close the file
+    fclose(file);
+
+    printf("File generated successfully!\n");
+
+    return 0;
 }
