@@ -6,12 +6,12 @@
 #define D 2 // number of inputs
 #define K 4 // number of outputs
 #define MAX_LINES 8000 
-#define H1 12 // hidden layer 2000
-#define H2 12 // ... 2
-#define H3 12 // ... 3
+#define H1 20 // hidden layer 2000
+#define H2 20 // ... 2
+#define H3 20 // ... 3
 #define NUM_LAYERS 3
 #define FUNC 1 // 0 for logistic 1 for hyberbolic 2 for relu
-#define B 1
+#define B 40
 
 
 // 3 hidden layers and one output layer
@@ -427,9 +427,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    /*
+    
     int count = 0;
-    for (int example = 0; example < 4000; example++) {
+
+    for (int example = 4000; example < 8000; example++) {
         float input[D];
         float target[K];
 
@@ -442,7 +443,7 @@ int main(int argc, char* argv[]) {
         forward_pass(&network, input, D, output, K);
 
         int highest_value_index = 0;
-        int highest_value = output[0];
+        float highest_value = output[0];
 
         // Find the index of the highest value in the output array
         for (int i = 1; i < K; i++) {
@@ -455,50 +456,11 @@ int main(int argc, char* argv[]) {
         // Check if the highest value index matches the target index
         if (target[highest_value_index] == 1) {
             count++;
-        }
+        }   
+    }
 
-    } 
-    
     float accuracy = count / 4000.0;
-    printf("Accuracy: %f%%\n", accuracy * 100.0); */
-
-
-    
-    // Allocate memory for input and output vectors
-    float input[D] = {-0.8, 0.0};  // Example input values in the range [-1, 1]
-    float *output = malloc(sizeof(float) * K);
-
-    
-
-    // Print the final network
-    printf("Final Network:\n");
-    //print_network(&network);
-
-    
-    // Perform the forward pass
-    forward_pass(&network, input, D, output, K);
-    float target[K];
-    classification(input, target);
-
-    for(int i = 0 ; i < K; i++){
-        printf("%lf ", target[i]);
-    }
-    printf("\n");
-
-    
-    // Print the output vector
-    printf("Output Vector:\n");
-    for (int i = 0; i < K; i++) {
-        printf("%f ", output[i]);
-    }
-    printf("\n");
-
-    // Free allocated memory
-    free(output);
-
-    //print_network(&network); 
-
-    
+    printf("Accuracy: %f%%\n", accuracy * 100.0);
 
     return 0;
 }
