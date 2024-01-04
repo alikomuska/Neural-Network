@@ -5,12 +5,13 @@
 
 #define D 2 // number of inputs
 #define K 4 // number of outputs
-#define MAX_LINES 4000 
-#define H1 8 // hidden layer 1
-#define H2 8 // ... 2
-#define H3 4 // ... 3
+#define MAX_LINES 8000 
+#define H1 12 // hidden layer 2000
+#define H2 12 // ... 2
+#define H3 12 // ... 3
 #define NUM_LAYERS 3
-#define FUNC 0 // 0 for logistic 1 for hyberbolic 2 for relu
+#define FUNC 1 // 0 for logistic 1 for hyberbolic 2 for relu
+#define B 1
 
 
 // 3 hidden layers and one output layer
@@ -313,6 +314,7 @@ void backprop(struct Neural_Network *network, float *x, int d, float *t, int k) 
         error += pow(t[i] - output[i] , 2);
     }
 
+    error = error /2;
     network->total_error = error;
 
     //compute errors in each neuron backwards
@@ -328,22 +330,36 @@ void backprop(struct Neural_Network *network, float *x, int d, float *t, int k) 
                          error_accumulator += network->layers[i + 1].neurons[k].Weights[j] *
                                      network->layers[i + 1].neurons[k].error;
                 }
-                network->layers[i].neurons[j].error = network->layers[i].neurons[j].output *
+                if(FUNC == 0) {
+                    network->layers[i].neurons[j].error = network->layers[i].neurons[j].output *
                                                    (1 - network->layers[i].neurons[j].output) *
                                                    error_accumulator;
+                } else if(FUNC == 1){
+                    network->layers[i].neurons[j].error = (1 - pow(network->layers[i].neurons[j].output, 2)) * error_accumulator;
+                } else {
+                    float relu_der = 0;
+                    if(network->layers[i].neurons[j].output > 0) {
+                        relu_der = 1;
+                    } else {
+                        relu_der = 0;
+                    }
+                    network->layers[i].neurons[j].error = relu_der * error_accumulator;
+
+                }
+                
             }
 
             if(i == 0){
                 // compute error derivatives
                 for(int l = 0; l < network->layers[i].neurons[j].num_input; l++){
-                    network->layers[i].neurons[j].error_derivative[l] = network->layers[i].neurons[j].error * x[l];
+                    network->layers[i].neurons[j].error_derivative[l] += network->layers[i].neurons[j].error * x[l];
                 }
             }else{
                 for(int l = 0; l < network->layers[i].neurons[j].num_input; l++){
-                    network->layers[i].neurons[j].error_derivative[l] = network->layers[i].neurons[j].error * network->layers[i - 1].neurons[l].output;
+                    network->layers[i].neurons[j].error_derivative[l] += network->layers[i].neurons[j].error * network->layers[i - 1].neurons[l].output;
                 }
             }
-            network->layers[i].neurons[j].bias_derivative = network->layers[i].neurons[j].error;
+            network->layers[i].neurons[j].bias_derivative += network->layers[i].neurons[j].error;
 
         }
     }
@@ -353,7 +369,10 @@ void backprop(struct Neural_Network *network, float *x, int d, float *t, int k) 
 
 
 
+
+
 int main(int argc, char* argv[]) {
+
     srand(time(NULL));
 
     // Load dataset
@@ -366,12 +385,14 @@ int main(int argc, char* argv[]) {
     init_neural_network(&network, NUM_LAYERS);
 
     // Training parameters
-    int epochs = 1000;
+    int epochs = 800;
     float learning_rate = 0.001;
 
     // Training loop
     for (int epoch = 0; epoch < epochs; epoch++) {
+        int batch = 0;
         for (int example = 0; example < 4000; example++) {
+            batch++;
             // Input and target for the selected example
             float input[D];
             float target[K];
@@ -381,17 +402,22 @@ int main(int argc, char* argv[]) {
             classification(input, target);
 
             // Perform forward pass and backpropagation
-            //forward_pass(&network, input, D, target, K);
             backprop(&network, input, D, target, K);
 
-            // Update weights and biases using online gradient descent
-            for (int i = 0; i < network.num_layers; i++) {
-                for (int j = 0; j < network.layers[i].num_neurons; j++) {
-                    for (int k = 0; k < network.layers[i].neurons[j].num_input; k++) {
-                        network.layers[i].neurons[j].Weights[k] -= learning_rate * network.layers[i].neurons[j].error_derivative[k];
+            // Update weights and biases using batch update
+
+            if(batch == B){
+                for (int i = 0; i < network.num_layers; i++) {
+                    for (int j = 0; j < network.layers[i].num_neurons; j++) {
+                        for (int k = 0; k < network.layers[i].neurons[j].num_input; k++) {
+                            network.layers[i].neurons[j].Weights[k] -= learning_rate * network.layers[i].neurons[j].error_derivative[k];
+                            network.layers[i].neurons[j].error_derivative[k] = 0;
+                        }
+                        network.layers[i].neurons[j].bias -= learning_rate * network.layers[i].neurons[j].bias_derivative;
+                        network.layers[i].neurons[j].bias_derivative = 0;
                     }
-                    network.layers[i].neurons[j].bias -= learning_rate * network.layers[i].neurons[j].bias_derivative;
                 }
+                batch = 0;
             }
         }
 
@@ -401,8 +427,45 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    /*
+    int count = 0;
+    for (int example = 0; example < 4000; example++) {
+        float input[D];
+        float target[K];
+
+        for (int i = 0; i < D; i++) {
+            input[i] = x[example][i];
+        }
+        classification(input, target);
+
+        float output[K];
+        forward_pass(&network, input, D, output, K);
+
+        int highest_value_index = 0;
+        int highest_value = output[0];
+
+        // Find the index of the highest value in the output array
+        for (int i = 1; i < K; i++) {
+            if (output[i] > highest_value) {
+                highest_value = output[i];
+                highest_value_index = i;
+            }
+        }
+
+        // Check if the highest value index matches the target index
+        if (target[highest_value_index] == 1) {
+            count++;
+        }
+
+    } 
+    
+    float accuracy = count / 4000.0;
+    printf("Accuracy: %f%%\n", accuracy * 100.0); */
+
+
+    
     // Allocate memory for input and output vectors
-    float input[D] = {0.8, -0.2};  // Example input values in the range [-1, 1]
+    float input[D] = {-0.8, 0.0};  // Example input values in the range [-1, 1]
     float *output = malloc(sizeof(float) * K);
 
     
@@ -435,6 +498,7 @@ int main(int argc, char* argv[]) {
 
     //print_network(&network); 
 
+    
+
     return 0;
 }
-
