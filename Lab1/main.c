@@ -6,12 +6,12 @@
 #define D 2 // number of inputs
 #define K 4 // number of outputs
 #define MAX_LINES 8000 
-#define H1 20 // hidden layer 2000
-#define H2 20 // ... 2
-#define H3 20 // ... 3
+#define H1 12 // hidden layer 2000
+#define H2 10 // ... 2
+#define H3 12 // ... 3
 #define NUM_LAYERS 3
 #define FUNC 1 // 0 for logistic 1 for hyberbolic 2 for relu
-#define B 40
+#define B 400
 
 
 // 3 hidden layers and one output layer
@@ -429,6 +429,11 @@ int main(int argc, char* argv[]) {
 
     
     int count = 0;
+    FILE *file = fopen("output.txt", "w");
+    if (file == NULL) {
+        perror("Error opening the file");
+        return 1;
+    }
 
     for (int example = 4000; example < 8000; example++) {
         float input[D];
@@ -456,8 +461,13 @@ int main(int argc, char* argv[]) {
         // Check if the highest value index matches the target index
         if (target[highest_value_index] == 1) {
             count++;
+            fprintf(file, "%f %f +\n", input[0], input[1]);
+        }
+        else{
+            fprintf(file, "%f %f -\n", input[0], input[1]);
         }   
     }
+    fclose(file);
 
     float accuracy = count / 4000.0;
     printf("Accuracy: %f%%\n", accuracy * 100.0);
