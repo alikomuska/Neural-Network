@@ -1,3 +1,7 @@
+//Ιωάννης Κούσιας 4611
+//Βασίλης Βαλεράς 4031 
+//Αλίκο Μούσκα 4427 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
